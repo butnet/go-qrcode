@@ -61,8 +61,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/skip2/go-qrcode/bitset"
-	"github.com/skip2/go-qrcode/reedsolomon"
+	"github.com/butnet/go-qrcode/bitset"
+	"github.com/butnet/go-qrcode/reedsolomon"
 )
 
 func EncodeWithLogo(content string, level RecoveryLevel, size int, logo image.Image, logoWidth, logoHeight int) ([]byte, error) {
