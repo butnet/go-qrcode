@@ -54,15 +54,39 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"image/draw"
 	"image/png"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
 
-	bitset "github.com/skip2/go-qrcode/bitset"
-	reedsolomon "github.com/skip2/go-qrcode/reedsolomon"
+	"github.com/skip2/go-qrcode/bitset"
+	"github.com/skip2/go-qrcode/reedsolomon"
 )
+
+func EncodeWithLogo(content string, level RecoveryLevel, size int, logo image.Image, logoWidth, logoHeight int) ([]byte, error) {
+	var q *QRCode
+
+	q, err := New(content, level)
+
+	if err != nil {
+		return nil, err
+	}
+
+	img := q.ImageWithLogo(size, logo, logoWidth, logoHeight)
+
+	encoder := png.Encoder{CompressionLevel: png.BestCompression}
+
+	var b bytes.Buffer
+	err = encoder.Encode(&b, img)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return b.Bytes(), nil
+}
 
 // Encode a QR Code and return a raw PNG image.
 //
@@ -268,6 +292,24 @@ func (q *QRCode) Bitmap() [][]bool {
 	q.encode()
 
 	return q.symbol.bitmap()
+}
+
+func (q *QRCode) ImageWithLogo(size int, logo image.Image, logoWidth, logoHeight int) image.Image {
+	img := q.Image(size)
+	rect := img.Bounds()
+	width, height := rect.Max.X-rect.Min.X, rect.Max.Y-rect.Min.Y
+	newImg := image.NewNRGBA(image.Rect(0, 0, width, height))
+	draw.Draw(newImg, image.Rectangle{
+		Min: image.Point{X: 0, Y: 0},
+		Max: image.Point{X: width, Y: height},
+	}, img, image.Point{}, draw.Over)
+
+	min := image.Point{X: (width - logoWidth) / 2, Y: (height - logoHeight) / 2}
+	draw.Draw(newImg, image.Rectangle{
+		Min: min,
+		Max: image.Point{X: min.X + logoWidth, Y: min.Y + logoHeight},
+	}, logo, image.Point{}, draw.Over)
+	return newImg
 }
 
 // Image returns the QR Code as an image.Image.
